@@ -8,6 +8,11 @@ use App\Http\Controllers\Admin\ExperienceController;
 use App\Http\Controllers\Admin\WorkController;
 use App\Http\Controllers\Admin\ContactController;
 use App\Http\Controllers\User\ContactMessageController;
+use App\Http\Controllers\Admin\AdminLoginController;
+
+
+Route::post('/admin/login', [AdminLoginController::class, 'login']);
+Route::post('/admin/logout', [AdminLoginController::class, 'logout']);
 
 Route::get('/skills', [SkillController::class, 'displaySkill']);
 Route::post('/skills', [SkillController::class, 'store']);

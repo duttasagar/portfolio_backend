@@ -16,7 +16,7 @@ public function displayHero()
     return response()->json([
         'hero' => $hero,
         'image_path' => $hero?->image,
-        'image_url' => $hero ? asset('storage/' . $hero->image) : null,
+        'image_url' => $hero ? asset($hero->image) : null,
     ]);
 }
 
@@ -26,13 +26,27 @@ public function displayHero()
 
     $data = $request->all();
 
-    if ($request->hasFile('cv_link')) {
-        $data['cv_link'] = $request->file('cv_link')->store('cv', 'public');
-    }
+if ($request->hasFile('cv_link')) {
 
-    if ($request->hasFile('image')) {
-        $data['image'] = $request->file('image')->store('heroes', 'public');
-    }
+    $file = $request->file('cv_link');
+
+    $filename = time() . '_' . $file->getClientOriginalName();
+
+    $file->move(public_path('cv'), $filename);
+
+    $data['cv_link'] = 'cv/' . $filename;
+}
+
+if ($request->hasFile('image')) {
+
+    $file = $request->file('image');
+
+    $filename = time() . '_' . $file->getClientOriginalName();
+
+    $file->move(public_path('heroes'), $filename);
+
+    $data['image'] = 'heroes/' . $filename;
+}
 
     if ($hero) {
         $hero->update($data);
@@ -44,22 +58,38 @@ public function displayHero()
     return response()->json($hero);
 }
 
-    public function update(Request $request, $id)
-    {
-        $hero = Hero::findOrFail($id);
+public function update(Request $request, $id)
+{
+    $hero = Hero::findOrFail($id);
 
-        $data = $request->all();
+    $data = $request->all();
 
-        if ($request->hasFile('cv_link')) {
-            $data['cv_link'] = $request->file('cv_link')->store('cv', 'public');
-        }
+    // CV upload to public/cv
+    if ($request->hasFile('cv_link')) {
 
-        if ($request->hasFile('image')) {
-            $data['image'] = $request->file('image')->store('heroes', 'public');
-        }
+        $file = $request->file('cv_link');
 
-        $hero->update($data);
+        $filename = time() . '_' . $file->getClientOriginalName();
 
-        return response()->json($hero);
+        $file->move(public_path('cv'), $filename);
+
+        $data['cv_link'] = 'cv/' . $filename;
     }
+
+    // Image upload to public/heroes
+    if ($request->hasFile('image')) {
+
+        $file = $request->file('image');
+
+        $filename = time() . '_' . $file->getClientOriginalName();
+
+        $file->move(public_path('heroes'), $filename);
+
+        $data['image'] = 'heroes/' . $filename;
+    }
+
+    $hero->update($data);
+
+    return response()->json($hero);
+}
 }
