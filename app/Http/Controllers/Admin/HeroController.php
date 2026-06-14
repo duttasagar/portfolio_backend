@@ -8,88 +8,81 @@ use Illuminate\Http\Request;
 
 class HeroController extends Controller
 {
+    public function displayHero()
+    {
+        $hero = Hero::first();
 
-public function displayHero()
-{
-    $hero = Hero::first();
-
-    return response()->json([
-        'hero' => $hero,
-        'image_path' => $hero?->image,
-        'image_url' => $hero ? asset($hero->image) : null,
-    ]);
-}
+        return response()->json([
+            'hero' => $hero,
+            'image_path' => $hero?->image,
+            'image_url' => $hero ? asset($hero->image) : null,
+        ]);
+    }
 
     public function store(Request $request)
-{
-    $hero = Hero::first();
+    {
+        $hero = Hero::first();
 
-    $data = $request->all();
+        $data = $request->except(['image', 'cv_link']);
 
-if ($request->hasFile('cv_link')) {
+        // CV upload
+        if ($request->hasFile('cv_link')) {
+            $file = $request->file('cv_link');
+            $filename = time() . '_' . $file->getClientOriginalName();
+            $file->move(public_path('cv'), $filename);
+            $data['cv_link'] = 'cv/' . $filename;
+        }
 
-    $file = $request->file('cv_link');
+        // Image upload
+        if ($request->hasFile('image')) {
+            $file = $request->file('image');
+            $filename = time() . '_' . $file->getClientOriginalName();
+            $file->move(public_path('heroes'), $filename);
+            $data['image'] = 'heroes/' . $filename;
+        }
 
-    $filename = time() . '_' . $file->getClientOriginalName();
+        if ($hero) {
+            $hero->update(array_merge([
+                'image' => $hero->image,
+                'cv_link' => $hero->cv_link,
+            ], $data));
 
-    $file->move(public_path('cv'), $filename);
+            return response()->json($hero);
+        }
 
-    $data['cv_link'] = 'cv/' . $filename;
-}
+        $hero = Hero::create($data);
 
-if ($request->hasFile('image')) {
-
-    $file = $request->file('image');
-
-    $filename = time() . '_' . $file->getClientOriginalName();
-
-    $file->move(public_path('heroes'), $filename);
-
-    $data['image'] = 'heroes/' . $filename;
-}
-
-    if ($hero) {
-        $hero->update($data);
         return response()->json($hero);
     }
 
-    $hero = Hero::create($data);
+    public function update(Request $request, $id)
+    {
+        $hero = Hero::findOrFail($id);
 
-    return response()->json($hero);
-}
+        $data = $request->except(['image', 'cv_link']);
 
-public function update(Request $request, $id)
-{
-    $hero = Hero::findOrFail($id);
+        // CV upload
+        if ($request->hasFile('cv_link')) {
+            $file = $request->file('cv_link');
+            $filename = time() . '_' . $file->getClientOriginalName();
+            $file->move(public_path('cv'), $filename);
+            $data['cv_link'] = 'cv/' . $filename;
+        } else {
+            $data['cv_link'] = $hero->cv_link;
+        }
 
-    $data = $request->all();
+        // Image upload
+        if ($request->hasFile('image')) {
+            $file = $request->file('image');
+            $filename = time() . '_' . $file->getClientOriginalName();
+            $file->move(public_path('heroes'), $filename);
+            $data['image'] = 'heroes/' . $filename;
+        } else {
+            $data['image'] = $hero->image;
+        }
 
-    // CV upload to public/cv
-    if ($request->hasFile('cv_link')) {
+        $hero->update($data);
 
-        $file = $request->file('cv_link');
-
-        $filename = time() . '_' . $file->getClientOriginalName();
-
-        $file->move(public_path('cv'), $filename);
-
-        $data['cv_link'] = 'cv/' . $filename;
+        return response()->json($hero);
     }
-
-    // Image upload to public/heroes
-    if ($request->hasFile('image')) {
-
-        $file = $request->file('image');
-
-        $filename = time() . '_' . $file->getClientOriginalName();
-
-        $file->move(public_path('heroes'), $filename);
-
-        $data['image'] = 'heroes/' . $filename;
-    }
-
-    $hero->update($data);
-
-    return response()->json($hero);
-}
 }
